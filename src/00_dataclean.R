@@ -154,3 +154,13 @@ prob_plant %>%
         panel.border = element_rect(linewidth = 1, fill = NA),
         panel.background = element_rect(fill = "white"),
         axis.ticks.length = unit(2, "mm"))
+
+
+plant_cell %>% 
+    ggplot(aes(x = time_d, y = rfu, colour = treatment))+
+    geom_point(position = position_jitter(width=0.2), alpha = 0.2)
+
+plant_cell %>% 
+    ggplot(aes(x = rfu))+
+    facet_grid(cols = vars(time_d), rows = vars(treatment))+
+    geom_histogram()
