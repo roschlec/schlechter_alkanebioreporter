@@ -157,10 +157,22 @@ prob_plant %>%
 
 
 plant_cell %>% 
-    ggplot(aes(x = time_d, y = rfu, colour = treatment))+
-    geom_point(position = position_jitter(width=0.2), alpha = 0.2)
+    filter(treatment == "PFF2") %>% 
+    ggplot(aes(x = time_d, y = log(rfu), colour = treatment))+
+    geom_point(position = position_jitter(width=0.2), alpha = 0.2)+
+    geom_boxplot(aes(group=time_d), color = "black", width = 0.4, outlier.alpha = 0, alpha = 0.5)+
+    theme(
+        aspect.ratio = 0.75,
+        axis.text = element_text(size = 12, color = "black"),
+        axis.title = element_text(size = 14, color = "black"),
+        strip.text = element_text(size = 12),
+        strip.background = element_rect(fill = NA),
+        panel.border = element_rect(linewidth = 1, fill = NA),
+        panel.background = element_rect(fill = "white"),
+        axis.ticks.length = unit(2, "mm"))
 
 plant_cell %>% 
-    ggplot(aes(x = rfu))+
+    ggplot(aes(x = log(rfu)))+
     facet_grid(cols = vars(time_d), rows = vars(treatment))+
-    geom_histogram()
+    geom_histogram()+
+    theme_bw()
