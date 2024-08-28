@@ -6,6 +6,7 @@ library(tidyverse)
 library(here)
 library(scales)
 library(RColorBrewer)
+library(ggpubr)
 
 ##  Colour palette
 palette_invitro <- c("diesel" = "#DD3C51", "no_diesel" = "#1F6683", "sterile" = "#D1C7B5")
@@ -31,7 +32,11 @@ df_ecdf <- function(x){
 
 ##  Load data
 #   In vitro OD measurement - Growth in BHB
-od <- read.csv(here('data', 'invitro_od.csv')) %>% na.exclude()
+od <- read.csv(here('data', 'invitro_od.csv')) %>% 
+    na.exclude() %>% 
+    group_by(replicate, time_d, treatment) %>% 
+    summarise(od = mean(od), .groups = "drop") %>% 
+    arrange(treatment, time_d)
 #   Plotting
 od %>% 
     group_by(time_d, treatment) %>% 
@@ -158,9 +163,11 @@ prob_plant %>%
 
 plant_cell %>% 
     filter(treatment == "PFF2") %>% 
-    ggplot(aes(x = time_d, y = log(rfu), colour = treatment))+
+    mutate(logrfu = log(rfu)) %>% 
+    ggplot(aes(x = time_d, y = logrfu, colour = treatment, group=time_d))+
     geom_point(position = position_jitter(width=0.2), alpha = 0.2)+
-    geom_boxplot(aes(group=time_d), color = "black", width = 0.4, outlier.alpha = 0, alpha = 0.5)+
+    geom_boxplot(color = "black", width = 0.4, outlier.alpha = 0, alpha = 0.5)+
+    guides(color = "none")+
     theme(
         aspect.ratio = 0.75,
         axis.text = element_text(size = 12, color = "black"),
