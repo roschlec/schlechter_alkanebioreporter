@@ -1,61 +1,71 @@
-// Convert to 8-bit grayscale if necessary
-run("8-bit");
-
-// Get the histogram of the image
-getStatistics(area, mean, min, max, std);
-thr = round(mean - 4*std);
-setThreshold(0, thr);
-
-// Analyze particles
+//	Process alkane bioreporter images
+	
+// 	Set global measurements
+run("Fresh Start");
 run("Set Measurements...", "area mean perimeter fit shape feret's display redirect=None decimal=3");
-run("Analyze Particles...", "size=0.40-2.50 exclude display add");
-resetThreshold();
 
-// Get the image title
-imageTitle = getTitle();  // This retrieves the current image's title
+//	Set the directory of the images and an output directory
+#@ File (label="Select input directory", style = "directory") dir
+#@ File (label= "Select ouput directory", style = "directory") out
 
-// Get the number of ROIs in the ROI Manager
-n = roiManager("count");
+list = getFileList(dir); // Get a list of all the files that will be analysed
 
-// Create a new Results table (if not already open)
-if (isOpen("Results")) {
-    run("Clear Results");
-} else {
-    run("Results...");
-}
+setBatchMode(true);
+for (i = 0; i < list.length; i++) {
+	if (endsWith(list[i], '.czi')){
+		print("Analysing image " + list[i]);
+		openfile = "open=["+dir+"/"+list[i]+"]";
+		run("Bio-Formats Windowless Importer", openfile);
 
-roiManager("Show None");
-// Loop through each detected ROI (particle)
-for (i = 0; i < n; i++) {
-    roiManager("select", i);  // Select the current ROI
+		// Convert to 8-bit grayscale if necessary
+		run("8-bit");
+		
+		// Get names and split 
+		titleID = getTitle();
+		atitle = replace(titleID, ".czi", "");
+		run("Split Channels");
 
-    run("Measure");
+		// Phase contrast
+		selectWindow("C2-" + titleID);
+		pc = getTitle();
+		pcID = getImageID();
 
-    // Ask the user to classify this particle as a bacterial cell using getBoolean()
-    message = "Is particle " + (i + 1) + " a bacterial cell?";  // Custom message for each particle
-    if (getBoolean(message, "Yes", "No")) {
-        cellStatus = "Yes";  // User confirmed it is a bacterial cell
-    } else {
-        cellStatus = "No";   // User denied it
+		selectWindow("C1-" + titleID);
+		gfp = getTitle();
+		gfpID = getImageID();
+		
+		// THRESHOLD the PHASE CONTRAST image
+		selectImage(pcID);
+		getStatistics(area, mean, min, max, std);
+		thr = round(mean - 4*std);
+		setThreshold(0, thr);
+
+		//	MEASURE GFP IMAGE
+		selectImage(pcID);
+		run("Analyze Particles...", "size=0.20-2.50 exclude add");
+		
+		// Check if any ROIs were detected
+    	roiManager("Count");
+    	roiCount = roiManager("Count");
+    
+    	if (roiCount > 0) {
+        	// Save the ROIs to a file
+        	selectImage(gfpID);
+			roiManager("Measure");
+
+			// Remove the ROI after measurement
+			roiManager("deselect");
+			roiManager("delete");
+    	} else {
+        	print("No ROIs detected for: " + atitle + ", skipping...");
+        }
+        
+        // Save results table for the image
+    	saveAs("Results", out + "/" + atitle + "_results.csv");
+        
+		}
+		while (nImages()>0) {
+          selectImage(nImages());  
+          run("Close");
     }
-
-    // Add the result to the table (ROI number and cell status)
-    setResult("ROI", i, i + 1);  // ROI number (1-based indexing)
-    setResult("Cell Status", i, cellStatus);  // User's classification (Yes/No)
-
-    updateResults();  // Update the Results table
-
 }
-
-// Remove the ROI after measurement
-roiManager("deselect");
-roiManager("delete");
-
-// Save the results with the image title (ensure the file name doesn't contain invalid characters)
-safeFileName = replace(imageTitle, " ", "_");  // Replace spaces with underscores
-safeFileName = replace(safeFileName, ".", "_"); // Replace periods with underscores (avoid file extension issues)
-
-// Save the results as a CSV file
-saveAs("Results", "/Users/rschlechter/repo/schlechter_alkanebioreporter/data/train_data/" + safeFileName + "_train.csv");
-
-close();
