@@ -1,3 +1,7 @@
+# Directories
+data/
+results/
+
 # History files
 .Rhistory
 .Rapp.history
