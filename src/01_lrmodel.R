@@ -6,7 +6,7 @@ set.seed(14071990)
 
 ### Load data
 data <- read.csv(here('data', 'train_data', 'train_data.csv')) %>% 
-    select(-Label, -ROI)
+    select(-Label, -ROI, -Mean)
 head(data)
 
 ### Data Split
