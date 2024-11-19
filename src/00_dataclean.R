@@ -1,7 +1,6 @@
 
 
 ##  Clean data
-
 library(tidyverse)
 library(here)
 library(scales)
@@ -9,7 +8,7 @@ library(RColorBrewer)
 library(ggpubr)
 
 ##  Colour palette
-palette_invitro <- c("diesel" = "#DD3C51", "no_diesel" = "#1F6683", "sterile" = "#D1C7B5")
+palette_invitro <- c("diesel" = "#1F6683", "no_diesel" = "#DD3C51", "sterile" = "#D1C7B5")
 palette_d <- c("1" = "#A6BDDB", "6" = "#02818A", "28" = "#014636")
 palette_d_plant <- c("0-inoculum" = "#FED976", "0-PFF2" = "#99D8C9", "2-PFF2" = "#41AE76", "7-PFF2" = "#00441B")
 
@@ -95,6 +94,34 @@ prob_invitro %>%
         panel.background = element_rect(fill = "white"),
         axis.ticks.length = unit(2, "mm"))
 
+invitro_lb_cell <- read.csv(here('data', 'invitro_microscopy_LB.csv'))
+
+prob_lb <- invitro_lb_cell %>%
+    mutate(Label = str_replace(Label, ".czi:.*", "")) %>% 
+    separate(Label, into = c("sampling_day", "condition", "rep"), sep = "-") %>% 
+    group_by(rep) %>% 
+    group_map(~ df_ecdf(.x$RFU)) %>% 
+    setNames(paste0("rep", seq(1,7))) %>% 
+    bind_rows(.id = "id")
+
+prob_lb %>% 
+    filter(ecdf < 1) %>% 
+    ggplot(aes(x = qnorm(ecdf), y = x, group = id))+
+    geom_point(size = 2, alpha = 0.5, stroke = 0)+
+    scale_x_continuous(name = "Cumulative distribution [%]", breaks = qnorm(b), labels = scales::percent(b, suffix = ""), limits = c(-4,4))+
+    scale_y_continuous(name = "Single-cell fluorescence [a.u.]")+
+    theme(
+        aspect.ratio = 0.75,
+        axis.text = element_text(size = 12, color = "black"),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(size = 14, color = "black"),
+        strip.text = element_text(size = 12),
+        strip.background = element_rect(fill = NA),
+        panel.border = element_rect(linewidth = 1, fill = NA),
+        panel.background = element_rect(fill = "white"),
+        axis.ticks.length = unit(2, "mm"))
+
+
 #   In planta
 cfu <- read.csv(here('data', 'inplanta_cfu.csv'))
 cfu_null <- read.csv(here('data', 'inplanta_cfu_null.csv')) %>% 
@@ -103,7 +130,7 @@ cfu_null <- read.csv(here('data', 'inplanta_cfu_null.csv')) %>%
 cfu %>% 
     group_by(time_d, replicate) %>% 
     summarise(logCFU = mean(logCFU)) %>% 
-    left_join(., cfu_null, by = c("time_d", "replicate")) %>% 
+    #left_join(., cfu_null, by = c("time_d", "replicate")) %>% 
     pivot_longer(-time_d:-replicate, values_to = "logCFU") %>%
     ggplot(aes(x = time_d, y = logCFU, colour = name))+
     geom_point(alpha = 0.5, position = position_jitter(width = 0.02))+
@@ -112,7 +139,7 @@ cfu %>%
                  fun.ymin = function(x) mean(x) - sd(x), 
                  fun.ymax = function(x) mean(x) + sd(x),
                  aes(shape = name), geom = "pointrange", fill = "white", color = "black", linewidth = 0.8)+
-    scale_y_continuous(name = bquote("Bacterial load ["~log[10]~CFU~gFW^-1~"]"), limits = c(2, 8))+
+    scale_y_continuous(name = bquote("Bacterial load ["~log[10]~CFU~gFW^-1~"]"), limits = c(4, 8))+
     scale_x_continuous(name = "Time [dpi]", limits = c(-0.1, 8), breaks = c(0, 2, 7))+
     scale_shape_manual(values = c(21, 23))+
     scale_colour_manual(values = c("black", "grey"))+
