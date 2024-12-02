@@ -5,8 +5,8 @@ library(vip)
 set.seed(14071990)
 
 ### Load data
-data <- read.csv(here('data', 'train_data', 'train_data.csv')) %>% 
-    select(-Label, -ROI, -Mean)
+data <- read.csv(here('data', 'train_data.csv')) %>% 
+    select(-X, -Label, -ROI, -Mean)
 head(data)
 
 ### Data Split
@@ -18,7 +18,7 @@ data_test <- testing(data_split)
 
 ### Recipe
 cell_rec <-
-    recipe(Cell ~ ., data = data_train)
+    recipe(Cell.Status ~ ., data = data_train)
 
 ### Define a model
 lr_mod <-
@@ -71,14 +71,18 @@ cell_lr_wkflw_final <-
 ### Fit model
 cell_lr_fit <- 
     cell_lr_wkflw_final %>%
-    last_fit(data_split) 
+    last_fit(data_split,
+             metrics = metric_set(
+                 recall, precision, f_meas,
+                 accuracy, kap,
+                 roc_auc, sens, spec)) 
 
 lr_metrics <- cell_lr_fit %>%
     collect_metrics()
 
 lr_roc_curve <- cell_lr_fit %>%
     collect_predictions() %>% 
-    roc_curve(Cell, .pred_No) %>% 
+    roc_curve(Cell.Status, .pred_No) %>% 
     autoplot()
 
 lr_importance <- cell_lr_fit %>% 
