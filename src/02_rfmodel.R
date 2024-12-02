@@ -4,8 +4,8 @@ library(here)
 set.seed(14071990)
 
 ### Load data
-data <- read.csv(here('data', 'train_data', 'train_data.csv')) %>% 
-    select(-Label, -ROI)
+data <- read.csv(here('data', 'train_data.csv')) %>% 
+    select(-X, -Label, -ROI, -Mean)
 head(data)
 
 ### Data Split
@@ -17,7 +17,7 @@ data_test <- testing(data_split)
 
 ### Recipe
 cell_rec <-
-    recipe(Cell ~ ., data = data_train)
+    recipe(Cell.Status ~ ., data = data_train)
 
 ### Define a model
 rf_mod <-
@@ -59,14 +59,18 @@ cell_rf_wkflw_final <-
 ### Fit model
 cell_rf_fit <- 
     cell_rf_wkflw_final %>%
-    last_fit(data_split) 
+    last_fit(data_split,
+             metrics = metric_set(
+                 recall, precision, f_meas,
+                 accuracy, kap,
+                 roc_auc, sens, spec))
 
 rf_metrics <- cell_rf_fit %>%
     collect_metrics()
 
 rf_roc_curve <- cell_rf_fit %>%
     collect_predictions() %>% 
-    roc_curve(Cell, .pred_No) %>% 
+    roc_curve(Cell.Status, .pred_No) %>% 
     autoplot()+
     theme_bw()
 
@@ -92,4 +96,4 @@ ggsave(plot = rf_importance, filename = here('results', 'rf_importance.pdf'),
 cell_rf_fit %>% 
     extract_workflow() %>% 
     augment(data_test) %>% 
-    select(Cell, .pred_class, .pred_No, .pred_Yes)
+    select(Cell.Status, .pred_class, .pred_No, .pred_Yes)
