@@ -134,7 +134,7 @@ invitro_cell %>%
         IQR = paste0(sprintf("%.1f", q1), "--", sprintf("%.1f", q3)))
 
 invitro_cell %>% 
-    group_by(treatment, time_d) %>% 
+    group_by(treatment, time_d, replicate) %>% 
     mutate(rel_fl = rfu/threshold) %>% 
     summarise(
         n = n(),
