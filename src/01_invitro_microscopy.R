@@ -7,11 +7,6 @@ library(ggprism)
 library(patchwork)
 set.seed(14071990)
 
-### Function
-mode <- function(codes){
-    which.max(tabulate(codes))
-}
-
 #####   Single-cell data clean up     #####
 ##      Load random forest model
 cell_rf_fit <- readRDS(here('results', 'invitro_rf.rds'))
