@@ -1,18 +1,38 @@
 // Convert to 8-bit grayscale if necessary
 run("8-bit");
 
+// Get the image title
+imageTitle = getTitle();  // This retrieves the current image's title
+titleID = replace(imageTitle, ".czi", "");
+run("Split Channels");
+
 // Get the histogram of the image
+selectWindow("C2-" + imageTitle);
+run("Duplicate...", "title=mask duplicate channels=2");
+selectWindow("mask")
 getStatistics(area, mean, min, max, std);
-thr = round(mean - 4*std);
+
+if (indexOf(titleID, "lb") >= 0) {
+	thr = round(mean - 1*std);
+	} else if (indexOf(titleID, "diesel") >= 0) {
+	thr = round(mean - 2*std);
+	} else {
+	thr = round(mean - 4*std);
+	}
 setThreshold(0, thr);
+
+// Create a mask
+run("Convert to Mask");
+run("Erode");
+run("Erode");
+run("Dilate");
+run("Dilate");
+run("Watershed");
 
 // Analyze particles
 run("Set Measurements...", "area mean perimeter fit shape feret's display redirect=None decimal=3");
-run("Analyze Particles...", "size=0.40-2.50 exclude display add");
+run("Analyze Particles...", "size=0.25-6.0 exclude display add");
 resetThreshold();
-
-// Get the image title
-imageTitle = getTitle();  // This retrieves the current image's title
 
 // Get the number of ROIs in the ROI Manager
 n = roiManager("count");
@@ -24,6 +44,7 @@ if (isOpen("Results")) {
     run("Results...");
 }
 
+selectWindow("C2-" + imageTitle);
 roiManager("Show None");
 // Loop through each detected ROI (particle)
 for (i = 0; i < n; i++) {
@@ -56,6 +77,8 @@ safeFileName = replace(imageTitle, " ", "_");  // Replace spaces with underscore
 safeFileName = replace(safeFileName, ".", "_"); // Replace periods with underscores (avoid file extension issues)
 
 // Save the results as a CSV file
-saveAs("Results", "/Users/rschlechter/repo/schlechter_alkanebioreporter/data/train_data/" + safeFileName + "_train.csv");
+saveAs("Results", "/Users/rschlechter/repo/schlechter_alkanebioreporter/data/train_data_in_vitro/" + safeFileName + "_train.csv");
 
-close();
+while (nImages()>0) {
+          selectImage(nImages());  
+          run("Close");
