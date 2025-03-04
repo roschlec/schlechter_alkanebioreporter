@@ -1,6 +1,7 @@
 # Directories
 data/
 results/
+src/test/
 
 # History files
 .Rhistory
