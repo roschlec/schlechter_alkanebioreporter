@@ -14,7 +14,7 @@ cell_rf_fit <- readRDS(here('results', 'inplanta_rf.rds'))
 ##  Load data
 single_cell_files <- 
     list.files(path = here('data'), 
-               pattern = "\\w{3}\\d{1}_single_cell", 
+               pattern = "\\w{3}\\d{1}_inplanta_single_cell", 
                full.names = TRUE)
 
 single_cell_data <- 
@@ -53,7 +53,7 @@ cell_data %>%
 ##  Background
 background_files <- 
     list.files(path = here('data'), 
-               pattern = "\\w{3}\\d{1}_background_2", 
+               pattern = "\\w{3}\\d{1}_inplanta_background", 
                full.names = TRUE)
 
 background_data <- 
