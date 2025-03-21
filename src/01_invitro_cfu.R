@@ -70,4 +70,5 @@ plt_od <-
         axis.ticks = element_line(linewidth = 0.25))
 
 plt_od
-ggsave(here('results', 'figure_1.pdf'), dpi = 600, width = 80, height = 50, units = "mm")
+ggsave(here('results', 'figure_1.pdf'), 
+       dpi = 600, width = 80, height = 50, units = "mm")

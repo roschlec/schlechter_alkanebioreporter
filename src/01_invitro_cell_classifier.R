@@ -199,7 +199,7 @@ plt_roc <-
 plt_imp <-
     lr_importance + rf_importance
 
-plt_metrics + plt_imp+
+plt_metrics + plt_imp +
     plot_annotation(tag_levels = "A")+
     plot_layout(width = c(0.8, 2)) &
     theme(

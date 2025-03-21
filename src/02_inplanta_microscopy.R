@@ -234,7 +234,7 @@ plot_inplanta_normalised_distribution <-
                labeller = labeller(ID = exp_lab, Time = time_lab))+
     geom_vline(aes(xintercept = qnorm(0.90)), linetype = "dotdash", alpha = 0.5, linewidth = 0.3)+
     geom_point(aes(colour = as.factor(time)),
-               size = 1.5, alpha = 0.75, stroke = 0)+
+               size = 1, alpha = 0.75, stroke = 0)+
     scale_colour_manual(name = "Time [dpi]", 
                       values = c("gray", "#41AE78", "#00441B"), 
                       labels = c("0", "2", "7"))+
@@ -270,27 +270,27 @@ inplanta_top_percent <-
 #       Test for normality
 inplanta_top_percent %>% 
     group_by(ID, Time) %>% 
-    shapiro_test(median_top)
+    shapiro_test(q99)
 
 #       Test for homoscedasticity
 inplanta_top_percent %>% 
     group_by(ID) %>% 
-    levene_test(median_top ~ Time)
+    levene_test(q99 ~ Time)
 
 ##      Are they different to zero?
 inplanta_top_percent %>% 
     group_by(ID, Time) %>% 
-    t_test(median_top ~ 0, mu = 1, var.equal = TRUE)
+    t_test(q99 ~ 0, mu = 1, var.equal = TRUE)
 
 ##      Are they different between sampling time
 inplanta_top_percent %>% 
     group_by(ID) %>% 
-    kruskal_test(median_top ~ Time)
+    kruskal_test(q99 ~ Time)
 
 inplanta_p_value_top <- 
     inplanta_top_percent %>% 
     group_by(ID) %>% 
-    dunn_test(median_top ~ Time, p.adjust.method = "holm") %>% 
+    dunn_test(q99 ~ Time, p.adjust.method = "holm") %>% 
     add_xy_position() %>% 
     mutate(xmin = as.numeric(group1),
            xmax = as.numeric(group2)) %>% 
@@ -326,9 +326,16 @@ plot_inplanta_top_percent<-
 
 ##  Plots
 plot_inplanta_distribution
-ggsave(here("results", "inplanta_distribution.png"), dpi = 300, width = 6, height = 4)
+ggsave(here("results", "figure_S5.pdf"), 
+       dpi = 600, width = 180, height = 90, units = "mm")
 
 plot_inplanta_normalised_distribution + plot_inplanta_top_percent +
     plot_annotation(tag_levels = "A") +
-    plot_layout(widths = c(3, 1))
-ggsave(here("results", "inplanta_normalised.png"), dpi = 300, width = 10, height = 4)
+    plot_layout(widths = c(3, 1)) &
+    theme(legend.margin = margin(0, 0, 0, 0),
+          legend.box.margin = margin(0, 0, 0, 0),
+          legend.spacing = unit(0, "pt"),
+          legend.key.width = unit(0.5, "lines"),     # Width of the color box
+          legend.key.height = unit(0.5, "lines"))
+ggsave(here("results", "figure_4.pdf"), 
+       dpi = 600, width = 180, height = 90, units = "mm")

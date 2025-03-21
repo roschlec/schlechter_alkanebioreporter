@@ -343,7 +343,7 @@ plot_top_percent <-
 
 ##  Plots
 plot_invitro_distribution
-ggsave(here('results', 'figure_S2.pdf'), 
+ggsave(here('results', 'figure_S3.pdf'), 
        dpi = 600, width = 180, height = 100, units = "mm")
 
 plot_invitro_normalised_distribution + plot_top_percent +
