@@ -94,16 +94,14 @@ lr_roc_curve <-
     roc_curve(Cell.Status, .pred_No) %>% 
     autoplot()+
     theme_classic()+
-    labs(title = "LR")+
-    theme(aspect.ratio = 1)
+    labs(title = "LR")
 
 lr_importance <- 
     invitro_lr_fit %>% 
     extract_fit_parsnip() %>% 
     vip()+
     theme_classic()+
-    labs(title = "LR")+
-    theme(aspect.ratio = 1)
+    labs(title = "LR")
 
 ### Random Forest Model
 rf_mod <-
@@ -152,16 +150,14 @@ rf_roc_curve <-
     roc_curve(Cell.Status, .pred_No) %>% 
     autoplot()+
     theme_classic()+
-    labs(title = "RF")+
-    theme(aspect.ratio = 1)
+    labs(title = "RF")
 
 rf_importance <- 
     invitro_rf_fit %>% 
     extract_fit_parsnip() %>% 
     vip() +
     theme_classic()+
-    labs(title = "RF")+
-    theme(aspect.ratio = 1)
+    labs(title = "RF")
 
 ###     Compare Models
 metrics_both <-
@@ -187,7 +183,6 @@ plt_metrics <-
         position = position_dodge(width = 0.6))+
     coord_flip()+
     theme_classic()+
-    theme(aspect.ratio = 1)+
     scale_color_manual(name = "Model", 
                        values = c("#FF6B6B", "#009E9E"), 
                        label = c("Logistic Regression", "Random Forest"))+ 
@@ -204,10 +199,19 @@ plt_roc <-
 plt_imp <-
     lr_importance + rf_importance
 
-wrap_plots(plt_metrics, plt_imp, plt_roc, ncol = 1)+
+plt_metrics + plt_imp+
     plot_annotation(tag_levels = "A")+
-    plot_layout(heights = c(1.5, 2, 2))
-ggsave(here('results', 'invitro_ML.png'), dpi = 300, width = 8, height = 10)
+    plot_layout(width = c(0.8, 2)) &
+    theme(
+        aspect.ratio = 1,
+        plot.margin = margin(0, 0, 0, 0),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(0, 0, 0, 0),
+        legend.spacing = unit(0, "pt"),
+        legend.key.width = unit(0.5, "lines"),     # Width of the color box
+        legend.key.height = unit(0.5, "lines"))
+ggsave(here('results', 'figure_S2.pdf'), 
+       dpi = 600, width = 300, height = 100, units = "mm")
 
 ### Save models
 saveRDS(invitro_lr_fit, here('results', 'invitro_lr.rds'))
