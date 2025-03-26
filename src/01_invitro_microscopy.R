@@ -7,11 +7,6 @@ library(ggprism)
 library(patchwork)
 set.seed(14071990)
 
-### Function
-mode <- function(codes){
-    which.max(tabulate(codes))
-}
-
 #####   Single-cell data clean up     #####
 ##      Load random forest model
 cell_rf_fit <- readRDS(here('results', 'invitro_rf.rds'))
@@ -34,7 +29,7 @@ cell_data <-
     mutate(Treatment = str_replace(Treatment, "nodiesel", "no_diesel"))
 
 cell_data %>% 
-    group_by(Treatment, Time) %>% 
+    group_by(Treatment, Time, Rep) %>% 
     tally() # Number of identified cells per treatment and time point
 
 ##      Background data
@@ -60,7 +55,7 @@ background_df <-
 ##      Exploratory analysis of background data
 background_data %>% 
     ggplot(aes(x = Mean))+
-    facet_grid(cols = vars(Time))+
+    facet_grid(cols = vars(Time), rows = vars(Treatment))+
     geom_histogram(bins = 50)
 
 ##  Background-corrected data
@@ -82,7 +77,7 @@ invitro_fluorescence_df <-
     invitro_fluorescence_df[-which(
         invitro_fluorescence_df$Treatment == "no_diesel" & 
             invitro_fluorescence_df$Time == "20220928" & 
-            invitro_fluorescence_df$Rep == "R3"),]
+            invitro_fluorescence_df$Rep == "R3"), ]
 
 ##      Exploratory analysis of background corrected data
 #       Number of replicates
@@ -148,7 +143,7 @@ prob_invitro_lb <-
     invitro_fluorescence_df %>% 
     filter(Treatment == "lb") %>%    # Filters LB data
     mutate(ecdf_prob = ecdf(rfu)(rfu)) %>% 
-    select(Time, rfu, ecdf_prob)
+    select(Time, rfu, ecdf_prob, Treatment)
 
 prob_invitro_lb %>% 
     ggplot(aes(x = ecdf_prob, y = rfu))+
@@ -225,7 +220,7 @@ normalised_df <-
 
 ##  Descriptive statistics of relative fluorescence
 normalised_df %>% 
-    group_by(Time, Rep) %>% 
+    group_by(Time) %>% 
     tally()
 
 normalised_df %>% 
@@ -281,7 +276,7 @@ plot_invitro_normalised_distribution <-
 top_percent <- 
     normalised_df %>%
     group_by(Treatment, time, Rep) %>%
-    filter(ecdf_prob > 0.99) %>%  # Select top 10%
+    filter(ecdf_prob > 0.99) %>%  # Select top 1%
     summarise(
         n = n(),
         median_top = median(relative_rfu), 
@@ -294,34 +289,35 @@ top_percent <-
 #       Test for normality
 top_percent %>% 
     group_by(Time) %>% 
-    shapiro_test(median_top)
+    shapiro_test(q99)
 
 #       Test for homoscedasticity
 top_percent %>% 
-    levene_test(median_top ~ Time)
-fligner.test(median_top ~ Time, top_percent)
+    levene_test(q99 ~ Time)
+fligner.test(q99 ~ Time, top_percent)
 
 ##      Are they different to zero?
 top_percent %>% 
     group_by(Time) %>% 
-    t_test(median_top ~ 0, mu = 1, var.equal = TRUE)
+    t_test(q99 ~ 0, mu = 1, var.equal = TRUE)
     
 ##      Are they different between sampling time
 top_percent %>% 
-    anova_test(median_top ~ Time)
+    anova_test(q99 ~ Time)
 
 p_value_top <- 
     top_percent %>% 
-    tukey_hsd(median_top ~ Time) %>% 
+    tukey_hsd(q99 ~ Time) %>% 
     add_xy_position() %>% 
     mutate(xmin = as.numeric(group1),
-           xmax = as.numeric(group2)) %>% 
+           xmax = as.numeric(group2),
+           y.position = y.position - 0.8) %>% 
     filter(p.adj < 0.05)
 
 #       Plot 
 plot_top_percent <-
     top_percent %>% 
-    ggplot(aes(x = time, y = median_top))+
+    ggplot(aes(x = time, y = q99))+
     geom_hline(yintercept = 1, linetype = "dashed", linewidth = 0.5, alpha = 0.2)+
     geom_line(aes(group = interaction(time, Treatment)),
               position = position_dodge(width = 3),
@@ -332,9 +328,9 @@ plot_top_percent <-
                xmin = "xmin", xmax = "xmax",
                label.size = 4, tip.length = 0.01,
                bracket.size = 0.3, step.increase = 0.001)+
-    scale_x_continuous(name = "Time [d]", limits = c(-0.1, 30), breaks = c(0, 1, 6, 28))+
+    scale_x_continuous(name = "Time [d]", limits = c(-0.1, 30), breaks = c(1, 6, 28))+
     scale_y_continuous(name = bquote(atop("Fold change fluorescence", "(" * Q[99] * ", normalised by BHB)")),
-                       limits = c(0, 6))+
+                       limits = c(0, 7.5))+
     guides(fill = "none")+
     theme(
         axis.text = element_text(size = 6, color = "black"),
@@ -347,9 +343,16 @@ plot_top_percent <-
 
 ##  Plots
 plot_invitro_distribution
-ggsave(here("results", "invitro_distribution.png"), dpi = 300, width = 12, height = 6)
+ggsave(here('results', 'figure_S3.pdf'), 
+       dpi = 600, width = 180, height = 100, units = "mm")
 
 plot_invitro_normalised_distribution + plot_top_percent +
     plot_annotation(tag_levels = "A") +
-    plot_layout(widths = c(3, 1))
-ggsave(here("results", "invitro_normalised.png"), dpi = 300, width = 10, height = 3)
+    plot_layout(widths = c(3, 1)) &
+    theme(legend.margin = margin(0, 0, 0, 0),
+          legend.box.margin = margin(0, 0, 0, 0),
+          legend.spacing = unit(0, "pt"),
+          legend.key.width = unit(0.5, "lines"),     # Width of the color box
+          legend.key.height = unit(0.5, "lines"))
+ggsave(here('results', 'figure_2.pdf'), 
+       dpi = 600, width = 180, height = 60, units = "mm")

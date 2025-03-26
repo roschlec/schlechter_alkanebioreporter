@@ -201,10 +201,19 @@ inplanta_plt_roc <-
 inplanta_plt_imp <-
     lr_importance + rf_importance
 
-wrap_plots(inplanta_plt_metrics, inplanta_plt_imp, inplanta_plt_roc, ncol = 1)+
+inplanta_plt_metrics + inplanta_plt_imp +
     plot_annotation(tag_levels = "A")+
-    plot_layout(heights = c(1.5, 2, 2))
-ggsave(here('results', 'inplanta_ML.png'), dpi = 300, width = 8, height = 10)
+    plot_layout(width = c(0.8, 2)) &
+    theme(
+        aspect.ratio = 1,
+        plot.margin = margin(0, 0, 0, 0),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(0, 0, 0, 0),
+        legend.spacing = unit(0, "pt"),
+        legend.key.width = unit(0.5, "lines"),     # Width of the color box
+        legend.key.height = unit(0.5, "lines"))
+ggsave(here('results', 'figure_S4.pdf'), 
+       dpi = 600, width = 300, height = 100, units = "mm")
 
 ### Save models
 saveRDS(inplanta_lr_fit, here('results', 'inplanta_lr.rds'))
