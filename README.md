@@ -1,4 +1,4 @@
-# Alkane 1-monooxigenase AlkB of *Pseudomonas* sp. FF2 is upregulated during colonisation of *Arabidopsis thaliana* leaves
+# The alkane 1-monooxigenase gene *alkB* of *Pseudomonas* sp. FF2 is upregulated during colonisation of *Arabidopsis thaliana* leaves
 
 ## Overview
 
